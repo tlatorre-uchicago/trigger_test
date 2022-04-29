@@ -4,13 +4,13 @@ from collections import namedtuple
 def generate_data(N, mc=True):
     data = np.zeros(N,dtype=[('pt',float),('ips',float),('L2_pt',float),('L2_ips',float),('L1_pt',float),('trigger',int),('cat',int)])
     np.random.seed(0)
-    data['pt'] = np.random.randn(N)*10 + 10
-    data['ips'] = np.random.randn(N)*10 + 10
+    data['pt'] = np.random.rand(N)*10 + 7
+    data['ips'] = np.random.rand(N)*10 + 2
     data['L2_pt'] = data['pt']
     if mc:
         data['L2_ips'] = data['ips']
     else:
-        data['L2_ips'] = data['ips'] - 2
+        data['L2_ips'] = data['ips']# - 2
     data['L1_pt'] = data['pt'] + np.random.randn(N)
     return data
 
@@ -19,13 +19,13 @@ HLT_Mu7_IP4 = L2Trigger(7,4,1 << 0)
 HLT_Mu9_IP6 = L2Trigger(9,6,1 << 1)
 HLT_Mu12_IP6 = L2Trigger(12,6,1 << 2)
 L1Seed = namedtuple('L1Seed',['pt','L2','time_on'])
-Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],0.5)
-Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.8)
-Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.7)
-Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
-Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
-Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
-Mu10 = L1Seed(10,[HLT_Mu12_IP6],1.0)
+Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],0.1)
+Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.2)
+Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.3)
+#Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
+#Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
+#Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
+Mu10 = L1Seed(10,[HLT_Mu12_IP6],0.8)
 Mu12 = L1Seed(12,[HLT_Mu12_IP6],1.0)
 L1_SEEDS = [Mu7,Mu8,Mu9,Mu10,Mu12]
 
@@ -37,17 +37,26 @@ categories = [category_low,category_mid,category_high]
 
 USE_REAL_IPS = True
 
-def trigger_data(data, mc=False):
+def trigger_data(data, mc=False, calibration=False):
     """
-    Simulates the CMS trigger from a given set of true pts and L1 pts. `Seeds`
-    should be a dictionary of the available L1 seeds where the key is the name
-    of the L1 seed and the value is the fraction of time the seed is active.
+    Simulates the CMS triggers.
+
+    Parameters
+    ==========
+
+    data: np.array
+        Data generated from generate_data() and trigger_data()
+    mc: bool
+        Is this MC?
+    calibration: bool
+        Is this the J/psi calibration?
     """
+    data = data.copy()
     for i in range(len(data)):
         for l1 in L1_SEEDS:
             if not mc and np.random.rand() > l1.time_on:
                 continue
-            if data['L1_pt'][i] > l1.pt:
+            if data['L1_pt'][i] > l1.pt or calibration:
                 for l2 in l1.L2:
                     if data['L2_pt'][i] > l2.pt and data['L2_ips'][i] > l2.ips:
                         data['trigger'][i] |= l2.index
@@ -56,11 +65,16 @@ def trigger_data(data, mc=False):
 def trigger_selection(data, use_real_ips=USE_REAL_IPS):
     """
     This is how we apply the trigger selection into low, mid, high categories
-    in our analysis. `l1s` is a list of L1 pts, `pts` is a list of the true pt,
-    `seeds` is a list of the active L1 seeds, and `include_l1` determines
-    whether we take into account the L1 trigger requirement or not (since we
-    apply this cut to the data and MC but do not apply it when computing the
-    trigger scale factor.
+    in our analysis.
+
+    Parameters
+    ==========
+
+    data: np.array
+        Data generated from generate_data() and trigger_data()
+    use_real_ips: bool
+        Use the true IPS instead of the L2 IPS. When True, this will be
+        equivalent to when we correct for the muon impact parameter error.
     """
     for i in range(len(data)):
         for cat in categories:
@@ -76,7 +90,7 @@ def trigger_selection(data, use_real_ips=USE_REAL_IPS):
 
 def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS):
     """
-    Compute the trigger scale factor as a function of true pt.
+    Compute the trigger scale factor as a function of L2 pt.
     """
     sf = {}
     for cat in categories:
@@ -129,13 +143,14 @@ if __name__ == '__main__':
     mc = generate_data(args.n,mc=True)
     data = trigger_data(data)
     mc = trigger_data(mc,mc=True)
+    mc_calibration = trigger_data(mc,mc=True,calibration=True)
     data = trigger_selection(data)
     mc = trigger_selection(mc)
     pt_bins = np.linspace(7,50,50)
     pt_bins_low = np.linspace(7,9,10)
     pt_bins_mid = np.linspace(9,12,10)
     ips_bins = np.linspace(0,50,50)
-    trgSF = compute_trgsf(data,mc,pt_bins,ips_bins)
+    trgSF = compute_trgsf(data,mc_calibration,pt_bins,ips_bins)
 
     data_high = data[(data['cat'] & category_high.index) != 0]
     data_mid = data[(data['cat'] & category_mid.index) != 0]
