@@ -10,7 +10,7 @@ def generate_data(N, mc=True):
     if mc:
         data['L2_ips'] = data['ips']
     else:
-        data['L2_ips'] = data['ips']# - 2
+        data['L2_ips'] = data['ips'] - 2
     data['L1_pt'] = data['pt'] + np.random.randn(N)
     return data
 
@@ -22,6 +22,9 @@ L1Seed = namedtuple('L1Seed',['pt','L2','time_on'])
 Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],0.5)
 Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.8)
 Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.7)
+Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
+Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
+Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
 Mu10 = L1Seed(10,[HLT_Mu12_IP6],1.0)
 Mu12 = L1Seed(12,[HLT_Mu12_IP6],1.0)
 L1_SEEDS = [Mu7,Mu8,Mu9,Mu10,Mu12]
@@ -62,11 +65,11 @@ def trigger_selection(data, use_real_ips=USE_REAL_IPS):
     for i in range(len(data)):
         for cat in categories:
             if not use_real_ips:
-                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and cat.min_pt < data['L2_ips'][i] > cat.min_ips:
+                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and data['L2_ips'][i] > cat.min_ips:
                     data['cat'][i] |= cat.index
                     break
             else:
-                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and cat.min_pt < data['ips'][i] > cat.min_ips:
+                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and data['ips'][i] > cat.min_ips:
                     data['cat'][i] |= cat.index
                     break
     return data
@@ -94,8 +97,8 @@ def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS):
                     tot_mc &= (mc['ips'] > ips_low) & (mc['ips'] < ips_high)
                 tot_mc &= l1_mc
                 tot_data &= l1_data
-                if np.count_nonzero(l1_mc & l2_mc & tot_mc) == 0 or np.count_nonzero(tot_mc) == 0 or np.count_nonzero(tot_data) == 0:
-                    sf[cat.name][(pt_bin,ips_bin)] = 0
+                if np.count_nonzero(l2_mc & tot_mc) == 0 or np.count_nonzero(tot_mc) == 0 or np.count_nonzero(tot_data) == 0:
+                    sf[cat.name][(pt_bin,ips_bin)] = 1
                 else:
                     sf[cat.name][(pt_bin,ips_bin)] = (np.count_nonzero(l2_data & tot_data)/np.count_nonzero(tot_data))/(np.count_nonzero(l2_mc & tot_mc)/np.count_nonzero(tot_mc))
     return sf
