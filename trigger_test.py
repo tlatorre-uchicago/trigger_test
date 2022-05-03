@@ -2,6 +2,45 @@
 import numpy as np
 from collections import namedtuple
 
+def setup_matplotlib(save=False):
+    import matplotlib
+
+    if save:
+        # default \textwidth for a fullpage article in Latex is 16.50764 cm.
+        # You can figure this out by compiling the following TeX document:
+        #
+        #    \documentclass{article}
+        #    \usepackage{fullpage}
+        #    \usepackage{layouts}
+        #    \begin{document}
+        #    textwidth in cm: \printinunitsof{cm}\printlen{\textwidth}
+        #    \end{document}
+
+        width = 16.50764
+        width /= 2.54 # cm -> inches
+        # According to this page:
+        # http://www-personal.umich.edu/~jpboyd/eng403_chap2_tuftegospel.pdf,
+        # Tufte suggests an aspect ratio of 1.5 - 1.6.
+        height = width/1.5
+        matplotlib.rcParams['figure.figsize'] = (width,height)
+
+        matplotlib.rcParams['font.family'] = 'serif'
+        matplotlib.rcParams['font.serif'] = 'computer modern roman'
+
+        matplotlib.rcParams['text.usetex'] = True
+    else:
+        # on retina screens, the default plots are way too small
+        # by using Qt5 and setting QT_AUTO_SCREEN_SCALE_FACTOR=1
+        # Qt5 will scale everything using the dpi in ~/.Xresources
+        matplotlib.use("Qt5Agg")
+
+        # Default figure size. Currently set to my monitor width and height so that
+        # things are properly formatted
+        matplotlib.rcParams['figure.figsize'] = (13.78,7.48)
+
+        # Make the defalt font bigger
+        matplotlib.rcParams['font.size'] = 12
+
 def generate_data(N, mc=True):
     data = np.zeros(N,dtype=[('pt',float),('ips',float),('L2_pt',float),('L2_ips',float),('L1_pt',float),('trigger',int),('cat',int),('prescale',int)])
     np.random.seed(0)
@@ -161,14 +200,18 @@ def get_trgsf_weights(mc,sf,pt_bins,ips_bins,cat, use_real_ips=USE_REAL_IPS):
 
 if __name__ == '__main__':
     import argparse
-    import matplotlib.pyplot as plt
 
     parser = argparse.ArgumentParser("trigger simulation")
     parser.add_argument("-n",default=100,type=int,help="number of events")
     parser.add_argument("--disable-l1",default=False,action='store_true',help="include l1 pt cut in category definition")
     parser.add_argument("--use-real-ips",default=False,action='store_true',help="use real ips when computing trigger scale factors")
     parser.add_argument("--disable-prescale",default=False,action='store_true',help="disable prescale")
+    parser.add_argument("--save",default=False,action='store_true',help="save matplotlib figures")
     args = parser.parse_args()
+
+    setup_matplotlib(args.save)
+
+    import matplotlib.pyplot as plt
 
     data = generate_data(args.n,mc=False)
     mc = generate_data(args.n,mc=True)
@@ -232,6 +275,8 @@ if __name__ == '__main__':
     data = np.zeros(len(xx),dtype=[('L2_pt',float),('L2_ips',float)])
     data['L2_pt'] = xx
     data['L2_ips'] = yy
+    if args.save:
+        plt.savefig("pt.pdf")
     plt.figure()
     for i, cat in enumerate(categories):
         plt.subplot(3,1,i+1)
@@ -241,4 +286,6 @@ if __name__ == '__main__':
         plt.xlabel(r"p$^\mathrm{T}$ (GeV)")
         plt.ylabel("IPS")
         plt.title(cat.name)
-    plt.show()
+    plt.savefig("trgsf.pdf")
+    if not args.save:
+        plt.show()

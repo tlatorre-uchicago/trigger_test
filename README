@@ -18,3 +18,18 @@ To test the affect of various ways to compute the trigger scale factors, you can
 - `--disable-l1`: Currently the trigger scale factors are computed by applying an L1 pt cut, this disables that cut
 - `--disable-prescale`: Currently the trigger scale factors are computed by only looking at events where a given trigger was active. This flag disables this cut.
 
+Default
+-------
+
+![Default settings](pt_default.pdf)
+
+With Real IPS
+-------------
+
+![Enabling the --use-real-ips option](pt_use_real_ips.pdf)
+
+With Real IPS + No L1 Cuts
+--------------------------
+
+![Enabling the --use-real-ips and --disable-l1 options](pt_use_real_ips_disable_l1.pdf)
+
