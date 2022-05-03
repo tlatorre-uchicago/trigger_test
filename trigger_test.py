@@ -120,11 +120,11 @@ def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS):
 def get_trgsf_weights(mc,sf,pt_bins,ips_bins,cat, use_real_ips=USE_REAL_IPS):
     weights = np.ones_like(mc['L2_pt'])
     for i in range(len(mc)):
-        pt_bin = np.digitize(data['L2_pt'][i],pt_bins)-1
+        pt_bin = np.digitize(mc['L2_pt'][i],pt_bins)-1
         if not use_real_ips:
-            ips_bin = np.digitize(data['L2_ips'][i],ips_bins)-1
+            ips_bin = np.digitize(mc['L2_ips'][i],ips_bins)-1
         else:
-            ips_bin = np.digitize(data['ips'][i],ips_bins)
+            ips_bin = np.digitize(mc['ips'][i],ips_bins)
         if (pt_bin, ips_bin) in sf[cat]:
             weights[i] = sf[cat][(pt_bin,ips_bin)]
         else:
