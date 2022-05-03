@@ -23,9 +23,6 @@ L1Seed = namedtuple('L1Seed',['pt','L2','time_on'])
 Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],0.1)
 Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.2)
 Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],0.3)
-#Mu7 = L1Seed(7,[HLT_Mu7_IP4,HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
-#Mu8 = L1Seed(8,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
-#Mu9 = L1Seed(9,[HLT_Mu9_IP6,HLT_Mu12_IP6],1.0)
 Mu10 = L1Seed(10,[HLT_Mu12_IP6],0.8)
 Mu12 = L1Seed(12,[HLT_Mu12_IP6],1.0)
 L1_SEEDS = [Mu7,Mu8,Mu9,Mu10,Mu12]
@@ -93,7 +90,23 @@ def trigger_selection(data, use_real_ips=USE_REAL_IPS):
 
 def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS, include_l1=False):
     """
-    Compute the trigger scale factor as a function of L2 pt.
+    Compute the trigger scale factor as a function of L2 pt and ips.
+
+    Parameters
+    ==========
+
+    data: np.array
+        Data generated from generate_data() and trigger_data(calibration=True)
+    mc: np.array
+        MC generated from generate_data() and trigger_data(calibration=True)
+    pt_bins: np.array
+        Transverse momentum bins
+    ips_bins: np.array
+        Impact parameter significance bin edges
+    use_real_ips: bool
+        Use the true impact parameter significance when binning the events.
+    include_l1: bool
+        Apply an L1 pT cut of 7, 9, and 12 for the low, mid, and high categories
     """
     sf = {}
     for cat in categories:
@@ -122,6 +135,9 @@ def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS, includ
     return sf
 
 def get_trgsf_weights(mc,sf,pt_bins,ips_bins,cat, use_real_ips=USE_REAL_IPS):
+    """
+    Returns the trigger scale factor weights for MC events.
+    """
     weights = np.ones_like(mc['L2_pt'])
     for i in range(len(mc)):
         pt_bin = np.digitize(mc['L2_pt'][i],pt_bins)-1
