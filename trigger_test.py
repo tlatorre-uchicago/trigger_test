@@ -224,4 +224,21 @@ if __name__ == '__main__':
     plt.hist(data_low['L2_pt'],bins=pt_bins_low,histtype='step',label='data')
     plt.hist(mc_low['L2_pt'],weights=weights_low,bins=pt_bins_low,histtype='step',label='mc')
     plt.xlabel(r"p$^\mathrm{T}$ (GeV)")
+
+    pt_bincenters = (pt_bins[1:] + pt_bins[:-1])/2
+    ips_bincenters = (ips_bins[1:] + ips_bins[:-1])/2
+    xx, yy = np.meshgrid(pt_bincenters,ips_bincenters)
+    xx, yy = xx.flatten(), yy.flatten()
+    data = np.zeros(len(xx),dtype=[('L2_pt',float),('L2_ips',float)])
+    data['L2_pt'] = xx
+    data['L2_ips'] = yy
+    plt.figure()
+    for i, cat in enumerate(categories):
+        plt.subplot(3,1,i+1)
+        zz = get_trgsf_weights(data,trgSF,pt_bins,ips_bins,cat.name,use_real_ips=False)
+        plt.hist2d(xx,yy,bins=[pt_bins,ips_bins],weights=zz)
+        plt.colorbar()
+        plt.xlabel(r"p$^\mathrm{T}$ (GeV)")
+        plt.ylabel("IPS")
+        plt.title(cat.name)
     plt.show()
