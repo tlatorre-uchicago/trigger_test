@@ -11,7 +11,7 @@ def generate_data(N, mc=True):
     if mc:
         data['L2_ips'] = data['ips']
     else:
-        data['L2_ips'] = data['ips']# - 2
+        data['L2_ips'] = data['ips'] - 2
     data['L1_pt'] = data['pt'] + np.random.randn(N)
     return data
 
@@ -91,7 +91,7 @@ def trigger_selection(data, use_real_ips=USE_REAL_IPS):
                     break
     return data
 
-def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS):
+def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS, include_l1=False):
     """
     Compute the trigger scale factor as a function of L2 pt.
     """
@@ -112,8 +112,9 @@ def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS):
                 else:
                     tot_data &= (data['ips'] > ips_low) & (data['ips'] < ips_high)
                     tot_mc &= (mc['ips'] > ips_low) & (mc['ips'] < ips_high)
-                l2_mc &= l1_mc
-                l2_data &= l1_data
+                if include_l1:
+                    l2_mc &= l1_mc
+                    l2_data &= l1_data
                 if np.count_nonzero(l2_mc & tot_mc) == 0 or np.count_nonzero(tot_mc) == 0 or np.count_nonzero(tot_data) == 0:
                     sf[cat.name][(pt_bin,ips_bin)] = 1
                 else:
@@ -140,6 +141,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser("trigger simulation")
     parser.add_argument("-n",default=100,type=int,help="number of events")
+    parser.add_argument("--include-l1",default=False,action='store_true',help="include l1 pt cut in category definition")
+    parser.add_argument("--use-real-ips",default=False,action='store_true',help="use real ips when computing trigger scale factors")
     args = parser.parse_args()
 
     data = generate_data(args.n,mc=False)
@@ -148,13 +151,13 @@ if __name__ == '__main__':
     data = trigger_data(data)
     mc_calibration = trigger_data(mc,mc=True,calibration=True)
     mc = trigger_data(mc,mc=True)
-    data = trigger_selection(data)
-    mc = trigger_selection(mc)
+    data = trigger_selection(data,use_real_ips=args.use_real_ips)
+    mc = trigger_selection(mc,use_real_ips=args.use_real_ips)
     pt_bins = np.linspace(7,17,17-7+1)
     pt_bins_low = np.linspace(7,9,10)
     pt_bins_mid = np.linspace(9,12,10)
     ips_bins = np.linspace(2,12,11)
-    trgSF = compute_trgsf(data_calibration,mc_calibration,pt_bins,ips_bins)
+    trgSF = compute_trgsf(data_calibration,mc_calibration,pt_bins,ips_bins,use_real_ips=args.use_real_ips,include_l1=args.include_l1)
 
     data_high = data[(data['cat'] & category_high.index) != 0]
     data_mid = data[(data['cat'] & category_mid.index) != 0]
@@ -164,9 +167,9 @@ if __name__ == '__main__':
     mc_mid = mc[(mc['cat'] & category_mid.index) != 0]
     mc_low = mc[(mc['cat'] & category_low.index) != 0]
 
-    weights_high = get_trgsf_weights(mc_high,trgSF,pt_bins,ips_bins,'High')
-    weights_mid = get_trgsf_weights(mc_mid,trgSF,pt_bins,ips_bins,'Mid')
-    weights_low = get_trgsf_weights(mc_low,trgSF,pt_bins,ips_bins,'Low')
+    weights_high = get_trgsf_weights(mc_high,trgSF,pt_bins,ips_bins,'High',use_real_ips=args.use_real_ips)
+    weights_mid = get_trgsf_weights(mc_mid,trgSF,pt_bins,ips_bins,'Mid',use_real_ips=args.use_real_ips)
+    weights_low = get_trgsf_weights(mc_low,trgSF,pt_bins,ips_bins,'Low',use_real_ips=args.use_real_ips)
 
     plt.figure()
     plt.subplot(3,2,1)
