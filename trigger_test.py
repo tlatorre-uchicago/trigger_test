@@ -56,11 +56,13 @@ def trigger_data(data, mc=False, calibration=False):
         for l1 in L1_SEEDS:
             if not mc and np.random.rand() > l1.time_on:
                 continue
-            if data['L1_pt'][i] > l1.pt or calibration:
+            if data['L1_pt'][i] > l1.pt:
                 for l2 in l1.L2:
                     if data['L2_pt'][i] > l2.pt and data['L2_ips'][i] > l2.ips:
                         data['trigger'][i] |= l2.index
-    return data
+    if calibration:
+        return data
+    return data[data['trigger'] != 0]
 
 def trigger_selection(data, use_real_ips=USE_REAL_IPS):
     """
@@ -124,7 +126,7 @@ def get_trgsf_weights(mc,sf,pt_bins,ips_bins,cat, use_real_ips=USE_REAL_IPS):
         if not use_real_ips:
             ips_bin = np.digitize(mc['L2_ips'][i],ips_bins)-1
         else:
-            ips_bin = np.digitize(mc['ips'][i],ips_bins)
+            ips_bin = np.digitize(mc['ips'][i],ips_bins)-1
         if (pt_bin, ips_bin) in sf[cat]:
             weights[i] = sf[cat][(pt_bin,ips_bin)]
         else:
@@ -142,6 +144,7 @@ if __name__ == '__main__':
     data = generate_data(args.n,mc=False)
     mc = generate_data(args.n,mc=True)
     data = trigger_data(data)
+    data_calibration = trigger_data(data,calibration=True)
     mc = trigger_data(mc,mc=True)
     mc_calibration = trigger_data(mc,mc=True,calibration=True)
     data = trigger_selection(data)
@@ -150,7 +153,7 @@ if __name__ == '__main__':
     pt_bins_low = np.linspace(7,9,10)
     pt_bins_mid = np.linspace(9,12,10)
     ips_bins = np.linspace(0,50,50)
-    trgSF = compute_trgsf(data,mc_calibration,pt_bins,ips_bins)
+    trgSF = compute_trgsf(data_calibration,mc_calibration,pt_bins,ips_bins)
 
     data_high = data[(data['cat'] & category_high.index) != 0]
     data_mid = data[(data['cat'] & category_mid.index) != 0]
