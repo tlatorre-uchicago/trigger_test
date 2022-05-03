@@ -116,6 +116,9 @@ def compute_trgsf(data_, mc_, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS, incl
         if use_prescale:
             data = data_[(data_['prescale'] & cat.trigger) != 0]
             mc = mc_[(mc_['prescale'] & cat.trigger) != 0]
+        else:
+            data = data_
+            mc = mc_
         for pt_bin, (pt_low, pt_high) in enumerate(zip(pt_bins[:-1],pt_bins[1:])):
             for ips_bin, (ips_low, ips_high) in enumerate(zip(ips_bins[:-1],ips_bins[1:])):
                 l1_data = data['L1_pt'] > cat.min_L1_pt
@@ -184,7 +187,7 @@ if __name__ == '__main__':
     pt_bins_low = np.linspace(7,9,10)
     pt_bins_mid = np.linspace(9,12,10)
     ips_bins = np.linspace(2,12,11)
-    trgSF = compute_trgsf(data_calibration,mc_calibration,pt_bins,ips_bins,use_real_ips=args.use_real_ips,include_l1=not args.disable_l1)
+    trgSF = compute_trgsf(data_calibration,mc_calibration,pt_bins,ips_bins,use_real_ips=args.use_real_ips,include_l1=not args.disable_l1,use_prescale=not args.disable_prescale)
 
     data_high = data[(data['cat'] & category_high.index) != 0]
     data_mid = data[(data['cat'] & category_mid.index) != 0]
