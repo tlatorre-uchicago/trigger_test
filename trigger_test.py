@@ -112,8 +112,8 @@ def compute_trgsf(data, mc, pt_bins, ips_bins, use_real_ips=USE_REAL_IPS):
                 else:
                     tot_data &= (data['ips'] > ips_low) & (data['ips'] < ips_high)
                     tot_mc &= (mc['ips'] > ips_low) & (mc['ips'] < ips_high)
-                tot_mc &= l1_mc
-                tot_data &= l1_data
+                l2_mc &= l1_mc
+                l2_data &= l1_data
                 if np.count_nonzero(l2_mc & tot_mc) == 0 or np.count_nonzero(tot_mc) == 0 or np.count_nonzero(tot_data) == 0:
                     sf[cat.name][(pt_bin,ips_bin)] = 1
                 else:
@@ -144,16 +144,16 @@ if __name__ == '__main__':
 
     data = generate_data(args.n,mc=False)
     mc = generate_data(args.n,mc=True)
-    data = trigger_data(data)
     data_calibration = trigger_data(data,calibration=True)
-    mc = trigger_data(mc,mc=True)
+    data = trigger_data(data)
     mc_calibration = trigger_data(mc,mc=True,calibration=True)
+    mc = trigger_data(mc,mc=True)
     data = trigger_selection(data)
     mc = trigger_selection(mc)
-    pt_bins = np.linspace(7,50,50)
+    pt_bins = np.linspace(7,17,17-7+1)
     pt_bins_low = np.linspace(7,9,10)
     pt_bins_mid = np.linspace(9,12,10)
-    ips_bins = np.linspace(0,50,50)
+    ips_bins = np.linspace(2,12,11)
     trgSF = compute_trgsf(data_calibration,mc_calibration,pt_bins,ips_bins)
 
     data_high = data[(data['cat'] & category_high.index) != 0]
