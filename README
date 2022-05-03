@@ -21,7 +21,7 @@ To test the affect of various ways to compute the trigger scale factors, you can
 Default
 -------
 
-![Default settings](pt_default.png)
+![Default settings](pt_default.png) ![Default settings](trgsf_default.png)
 
 With Real IPS
 -------------
