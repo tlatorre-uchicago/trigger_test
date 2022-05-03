@@ -26,10 +26,10 @@ Default
 With Real IPS
 -------------
 
-![Enabling the --use-real-ips option](pt_use_real_ips.pdf)
+![Enabling the --use-real-ips option](pt_use_real_ips.png)
 
 With Real IPS + No L1 Cuts
 --------------------------
 
-![Enabling the --use-real-ips and --disable-l1 options](pt_use_real_ips_disable_l1.pdf)
+![Enabling the --use-real-ips and --disable-l1 options](pt_use_real_ips_disable_l1.png)
 
