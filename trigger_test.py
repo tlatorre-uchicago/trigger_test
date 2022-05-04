@@ -120,11 +120,11 @@ def trigger_selection(data, use_real_ips=USE_REAL_IPS):
     for i in range(len(data)):
         for cat in categories:
             if not use_real_ips:
-                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and data['L2_ips'][i] > cat.min_ips:
+                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and data['L2_ips'][i] > cat.min_ips and data['L1_pt'][i] > cat.min_L1_pt:
                     data['cat'][i] |= cat.index
                     break
             else:
-                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and data['ips'][i] > cat.min_ips:
+                if cat.min_pt < data['L2_pt'][i] < cat.max_pt and data['trigger'][i] & cat.trigger and data['ips'][i] > cat.min_ips and data['L1_pt'][i] > cat.min_L1_pt:
                     data['cat'][i] |= cat.index
                     break
     return data
